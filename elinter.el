@@ -1,71 +1,147 @@
 ;;; -*- coding: utf-8; lexical-binding: t -*-
-;;; Author: 2025-01-26 21:10:35
-;;; Timestamp: <2025-01-26 21:10:35>
-;;; File: /home/ywatanabe/proj/lint-elisp/elinter.el
+;;; Author: 2025-01-26 21:50:11
+;;; Timestamp: <2025-01-26 21:50:11>
+;;; File: /home/ywatanabe/proj/elinter/elinter.el
 
 ;; 1. Main entry
 ;; ----------------------------------------
-(defun elinter-lint-buffer ()
+(defun elinter-lint-buffer
+    ()
   "Format current elisp buffer"
   (interactive)
-  (let ((original-point (point)))
+  (let
+      ((original-point
+        (point)))
 
     ;; To the top
-    (goto-char (point-min))
+    (goto-char
+     (point-min))
 
     ;; Main
-    (while (not (eobp))
+    (while
+        (not
+         (eobp))
 
-      (when (not (eobp))
+      (when
+          (not
+           (eobp))
         (--elinter-skip-comments))
 
-      (when (not (eobp))
+      (when
+          (not
+           (eobp))
         (--elinter-skip-code-block))
 
-      (when (and (not (eobp)) (--elinter-is-empty-line))
-        (--elinter-insert-newline))
+      (when
+          (and
+           (not
+            (eobp))
+           (--elinter-is-empty-line))
+        (--elinter-insert-tag))
 
-      (when (not (eobp))
+      (when
+          (not
+           (eobp))
         (delete-blank-lines))
 
-      (when (not (eobp))
+      (when
+          (not
+           (eobp))
         (forward-line)))
+
+    ;; Calls pp-buffer
+    (pp-buffer)
+
+    ;; Removes all tags
+    (--elinter-remove-all-tags)
+
+    ;; Mark buffer
+    (--elinter-indent-buffer)
 
     ;; To the original point
     (goto-char original-point)))
 
 ;; 2. Core functions
 ;; ----------------------------------------
-(defun --elinter-insert-newline ()
-  "Insert tag at current point."
-  (interactive)
-  (insert "\n"))
-
-(defun --elinter-is-empty-line ()
+(defun --elinter-is-empty-line
+    ()
   "Check if current line contains only whitespace."
-  (interactive)
-  (let ((is-empty-line (looking-at "^[[:space:]]*$")))
+  (let
+      ((is-empty-line
+        (looking-at "^[[:space:]]*$")))
     (message "%s" is-empty-line)
     is-empty-line))
 
-(defun --elinter-skip-comments ()
+(defun --elinter-skip-comments
+    ()
   "Skip over comment blocks and move to next non-comment line."
-  (interactive)
-  (when (looking-at "^[[:space:]]*;")
+  (when
+      (looking-at "^[[:space:]]*;")
     (forward-line 1)
-    (while (looking-at "^[[:space:]]*;")
+    (while
+        (looking-at "^[[:space:]]*;")
       (forward-line 1))))
 
-(defun --elinter-skip-code-block ()
+(defun --elinter-skip-code-block
+    ()
   "Skip over code block until comment or empty line is found."
-  (interactive)
-  (when (not (or (looking-at "^[[:space:]]*;")
-                 (looking-at "^[[:space:]]*$")))
+  (when
+      (not
+       (or
+        (looking-at "^[[:space:]]*;")
+        (looking-at "^[[:space:]]*$")))
     (forward-line 1)
-    (while (and (not (eobp))
-                (not (looking-at "^[[:space:]]*;"))
-                (not (looking-at "^[[:space:]]*$")))
+    (while
+        (and
+         (not
+          (eobp))
+         (not
+          (looking-at "^[[:space:]]*;"))
+         (not
+          (looking-at "^[[:space:]]*$")))
       (forward-line 1))))
+
+(defvar --elinter-tag "THIS-IS-ELINTER-TAG)"
+  "Tag string used to mark positions during formatting.")
+
+(defun --elinter-insert-tag
+    ()
+  "Insert tag at current point."
+  (insert --elinter-tag))
+
+(defun --elinter-remove-all-tags
+    ()
+  "Remove all tags from buffer."
+  (save-excursion
+    (let*
+        ((orig-pos
+          (point))
+         (tag-value
+          (symbol-value '--elinter-tag))
+         (defvar-pos
+          (save-excursion
+            (goto-char
+             (point-min))
+            (search-forward "(defvar --elinter-tag" nil t))))
+      (goto-char orig-pos)
+      (goto-char
+       (point-min))
+      (while
+          (search-forward tag-value nil t)
+        (unless
+            (save-excursion
+              (goto-char
+               (match-beginning 0))
+              (looking-back "(defvar --elinter-tag[[:space:]\n]*\"" 100))
+          (replace-match ""))))))
+
+(defun --elinter-indent-buffer
+    ()
+  "Indent entire buffer."
+  (save-excursion
+    (indent-region
+     (point-min)
+     (point-max))))
 
 ;; ;; 3. Key Binding and Hook
 ;; ;; ----------------------------------------
