@@ -1,10 +1,10 @@
-;;; -*- coding: utf-8; lexical-binding: t -*-
-;;; Author: 2025-01-26 21:50:11
-;;; Timestamp: <2025-01-26 21:50:11>
-;;; File: /home/ywatanabe/proj/elinter/elinter.el
+;;; Author: 2025-01-29 21:56:03
+;;; Timestamp: <2025-01-29 21:56:03>
+;;; File: /home/ywatanabe/.dotfiles/.emacs.d/lisp/elinter/elinter.el
 
 ;; 1. Main entry
 ;; ----------------------------------------
+
 (defun elinter-lint-buffer
     ()
   "Format current elisp buffer"
@@ -12,57 +12,57 @@
   (let
       ((original-point
         (point)))
-
     ;; To the top
     (goto-char
      (point-min))
-
+    ;; Remove any existing fake headers first
+    (while
+        (looking-at
+         (concat "^"
+                 (regexp-quote --elinter-fake-header)))
+      (delete-line))
+    ;; Insert fresh fake header
+    (insert --elinter-fake-header "\n")
     ;; Main
     (while
         (not
          (eobp))
-
       (when
           (not
            (eobp))
         (--elinter-skip-comments))
-
       (when
           (not
            (eobp))
         (--elinter-skip-code-block))
-
       (when
           (and
            (not
             (eobp))
            (--elinter-is-empty-line))
         (--elinter-insert-tag))
-
       (when
           (not
            (eobp))
         (delete-blank-lines))
-
       (when
           (not
            (eobp))
         (forward-line)))
-
     ;; Calls pp-buffer
     (pp-buffer)
-
     ;; Removes all tags
     (--elinter-remove-all-tags)
-
+    ;; Removes fake header
+    (--elinter-remove-fake-header)
     ;; Mark buffer
     (--elinter-indent-buffer)
-
     ;; To the original point
     (goto-char original-point)))
 
 ;; 2. Core functions
 ;; ----------------------------------------
+
 (defun --elinter-is-empty-line
     ()
   "Check if current line contains only whitespace."
@@ -101,8 +101,27 @@
           (looking-at "^[[:space:]]*$")))
       (forward-line 1))))
 
-(defvar --elinter-tag "THIS-IS-ELINTER-TAG)"
+(defvar --elinter-fake-header ";; ELINTER-FAKE-HEADER"
   "Tag string used to mark positions during formatting.")
+
+(defvar --elinter-tag "(THIS-IS-ELINTER-TAG)"
+  "Tag string used to mark positions during formatting.")
+
+(defun --elinter-remove-fake-header
+    ()
+  "Remove fake headers from buffer."
+  (save-excursion
+    (goto-char
+     (point-min))
+    (while
+        (re-search-forward
+         (concat "^"
+                 (regexp-quote --elinter-fake-header))
+         nil t)
+      (delete-region
+       (line-beginning-position)
+       (1+
+        (line-end-position))))))
 
 (defun --elinter-insert-tag
     ()
@@ -113,27 +132,15 @@
     ()
   "Remove all tags from buffer."
   (save-excursion
-    (let*
-        ((orig-pos
-          (point))
-         (tag-value
-          (symbol-value '--elinter-tag))
-         (defvar-pos
-          (save-excursion
-            (goto-char
-             (point-min))
-            (search-forward "(defvar --elinter-tag" nil t))))
-      (goto-char orig-pos)
-      (goto-char
-       (point-min))
-      (while
-          (search-forward tag-value nil t)
-        (unless
-            (save-excursion
-              (goto-char
-               (match-beginning 0))
-              (looking-back "(defvar --elinter-tag[[:space:]\n]*\"" 100))
-          (replace-match ""))))))
+    (goto-char
+     (point-min))
+    (while
+        (re-search-forward
+         (concat "^[[:space:]]*"
+                 (regexp-quote --elinter-tag)
+                 "[[:space:]]*$")
+         nil t)
+      (replace-match ""))))
 
 (defun --elinter-indent-buffer
     ()
@@ -148,11 +155,15 @@
 ;; (define-key emacs-lisp-mode-map
 ;;             (kbd "C-c C-l")
 ;;             'elinter-lint-buffer)
-
 ;; ;; Before saving
-
 ;; (add-hook 'emacs-lisp-mode-hook
 ;;           (lambda ()
 ;;             (add-hook 'before-save-hook 'elinter-lint-buffer nil t)))
 
 (provide 'elinter)
+
+(when
+    (not load-file-name)
+  (message "elinter.el loaded."
+           (file-name-nondirectory
+            (or load-file-name buffer-file-name))))
