@@ -66,7 +66,7 @@
     ;; Mark buffer
     (--elinter-indent-buffer)
     ;; Cleanup
-    (--elinter-remove-the-first-line-if-empty)
+    (--elinter-remove-the-first-empty-lines)
     ;; To the original point
     (goto-char original-point)))
 
@@ -123,7 +123,10 @@
 (defun --elinter-insert-fake-header
     ()
   "Insert fake header at current point."
-  (insert --elinter-fake-header "\n"))
+  (save-excursion
+    (goto-char
+     (point-min))
+    (insert --elinter-fake-header "\n")))
 
 (defun --elinter-insert-tag
     ()
@@ -172,15 +175,15 @@
          nil t)
       (replace-match ""))))
 
-(defun --elinter-remove-the-first-line-if-empty
+(defun --elinter-remove-the-first-empty-lines
     ()
-  "Remove the first line if empty."
+  "Remove empty lines at the beginning of buffer."
   (let
       ((orig-pos
         (point)))
     (goto-char
      (point-min))
-    (when
+    (while
         (--elinter-is-empty-line)
       (delete-region
        (line-beginning-position)
@@ -198,15 +201,16 @@
 
 ;; ;; 3. Key Binding and Hook
 ;; ;; ----------------------------------------
-;;
+
 ;; (define-key emacs-lisp-mode-map
 ;;             (kbd "C-c C-l")
 ;;             'elinter-lint-buffer)
-;;
+
 ;; ;; Before saving
-;;
+
 ;; (add-hook 'emacs-lisp-mode-hook
-;;           (lambda ()
+;;           (lambda
+;;             ()
 ;;             (add-hook 'before-save-hook 'elinter-lint-buffer nil t)))
 
 (provide 'elinter)
