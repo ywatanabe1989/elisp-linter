@@ -2,7 +2,16 @@
 ;;; Timestamp: <2025-01-29 21:56:03>
 ;;; File: /home/ywatanabe/.dotfiles/.emacs.d/lisp/elinter/elinter.el
 
-;; 1. Main entry
+;; 1. Variables
+;; ----------------------------------------
+
+(defvar --elinter-fake-header ";; ELINTER-FAKE-HEADER"
+  "Tag string used to mark positions during formatting.")
+
+(defvar --elinter-tag "(THIS-IS-ELINTER-TAG)"
+  "Tag string used to mark positions during formatting.")
+
+;; 2. Main Function
 ;; ----------------------------------------
 
 (defun elinter-lint-buffer
@@ -15,14 +24,13 @@
     ;; To the top
     (goto-char
      (point-min))
+
     ;; Remove any existing fake headers first
-    (while
-        (looking-at
-         (concat "^"
-                 (regexp-quote --elinter-fake-header)))
-      (delete-line))
+    (--elinter-remove-existing-fake-headers)
+
     ;; Insert fresh fake header
-    (insert --elinter-fake-header "\n")
+    (--elinter-insert-fake-header)
+
     ;; Main
     (while
         (not
@@ -57,10 +65,15 @@
     (--elinter-remove-fake-header)
     ;; Mark buffer
     (--elinter-indent-buffer)
+    ;; Cleanup
+    (--elinter-remove-the-first-line-if-empty)
     ;; To the original point
     (goto-char original-point)))
 
-;; 2. Core functions
+;; 3. Helper functions
+;; ----------------------------------------
+
+;; Checker
 ;; ----------------------------------------
 
 (defun --elinter-is-empty-line
@@ -71,6 +84,9 @@
         (looking-at "^[[:space:]]*$")))
     (message "%s" is-empty-line)
     is-empty-line))
+
+;; Skippers
+;; ----------------------------------------
 
 (defun --elinter-skip-comments
     ()
@@ -101,11 +117,21 @@
           (looking-at "^[[:space:]]*$")))
       (forward-line 1))))
 
-(defvar --elinter-fake-header ";; ELINTER-FAKE-HEADER"
-  "Tag string used to mark positions during formatting.")
+;; Inserters
+;; ----------------------------------------
 
-(defvar --elinter-tag "(THIS-IS-ELINTER-TAG)"
-  "Tag string used to mark positions during formatting.")
+(defun --elinter-insert-fake-header
+    ()
+  "Insert fake header at current point."
+  (insert --elinter-fake-header "\n"))
+
+(defun --elinter-insert-tag
+    ()
+  "Insert tag at current point."
+  (insert --elinter-tag))
+
+;; Removers
+;; ----------------------------------------
 
 (defun --elinter-remove-fake-header
     ()
@@ -123,10 +149,14 @@
        (1+
         (line-end-position))))))
 
-(defun --elinter-insert-tag
+(defun --elinter-remove-existing-fake-headers
     ()
-  "Insert tag at current point."
-  (insert --elinter-tag))
+  ;; Remove any existing fake headers first
+  (while
+      (looking-at
+       (concat "^"
+               (regexp-quote --elinter-fake-header)))
+    (delete-line)))
 
 (defun --elinter-remove-all-tags
     ()
@@ -142,6 +172,22 @@
          nil t)
       (replace-match ""))))
 
+(defun --elinter-remove-the-first-line-if-empty
+    ()
+  "Remove the first line if empty."
+  (let
+      ((orig-pos
+        (point)))
+    (goto-char
+     (point-min))
+    (when
+        (--elinter-is-empty-line)
+      (delete-region
+       (line-beginning-position)
+       (1+
+        (line-end-position))))
+    (goto-char orig-pos)))
+
 (defun --elinter-indent-buffer
     ()
   "Indent entire buffer."
@@ -152,10 +198,13 @@
 
 ;; ;; 3. Key Binding and Hook
 ;; ;; ----------------------------------------
+;;
 ;; (define-key emacs-lisp-mode-map
 ;;             (kbd "C-c C-l")
 ;;             'elinter-lint-buffer)
+;;
 ;; ;; Before saving
+;;
 ;; (add-hook 'emacs-lisp-mode-hook
 ;;           (lambda ()
 ;;             (add-hook 'before-save-hook 'elinter-lint-buffer nil t)))
