@@ -4,7 +4,7 @@
 !-- File: /home/ywatanabe/proj/elinter/README.md
 !-- --- -->
 
-# elinter
+# elisp-linter
 
 A simple linter for Emacs Lisp that enforces consistent formatting.
 
