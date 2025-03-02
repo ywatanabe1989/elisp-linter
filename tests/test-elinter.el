@@ -1,6 +1,6 @@
 ;;; -*- coding: utf-8; lexical-binding: t -*-
 ;;; Author: ywatanabe
-;;; Timestamp: <2025-03-02 23:21:04>
+;;; Timestamp: <2025-03-03 01:27:58>
 ;;; File: /home/ywatanabe/.dotfiles/.emacs.d/lisp/elinter/tests/test-elinter.el
 
 (require 'ert)
@@ -103,55 +103,6 @@
      (string=
       (buffer-string)
       "Content here\n"))))
-
-;; Test the parenthesis fixing function
-;; (ert-deftest test-elinter-remove-whitespaces-between-closing-parens
-;;     ()
-;;   (with-temp-buffer
-;;     ;; Simple case - should merge
-;;     (insert "(test)\n  )")
-;;     (--elinter-remove-whitespaces-between-closing-parens)
-;;     (should
-;;      (string=
-;;       (buffer-string)
-;;       "(test))"))
-
-;;     ;; Reset buffer
-;;     (erase-buffer)
-
-;;     ;; Case with intervening open paren - should not merge
-;;     (insert "(test)\n  (inner) )")
-;;     (--elinter-remove-whitespaces-between-closing-parens)
-;;     (should
-;;      (string=
-;;       (buffer-string)
-;;       "(test)\n  (inner) )"))))
-;; (ert-deftest test-elinter-remove-whitespaces-between-closing-parens
-;;     ()
-;;   (with-temp-buffer
-;;     ;; Simple case - should merge
-;;     (insert "(test)\n  )")
-;;     (--elinter-remove-whitespaces-between-closing-parens)
-;;     (should
-;;      (string=
-;;       (buffer-string)
-;;       "(test))")))
-
-;;   ;; Reset buffer
-;;   (erase-buffer)
-
-;;   ;; Case with intervening open paren - should not merge
-;;   (insert "(test)\n  (inner) )")
-;;   (--elinter-remove-whitespaces-between-closing-parens)
-;;   (should
-;;    (string=
-;;     (buffer-string)
-;;     "(test)\n  (inner) )")))
-;; Test the parenthesis fixing function
-
-;; Test the parenthesis fixing function
-
-;; Test the parenthesis fixing function
 (ert-deftest test-elinter-remove-whitespaces-between-closing-parens
     ()
   (with-temp-buffer
@@ -209,29 +160,6 @@
      (string-match-p "(defun test1 () nil)\n\n(defun test2"
                      (buffer-string)))))
 
-;; Test the main formatting function
-;; (ert-deftest test-elinter-lint-buffer
-;;     ()
-;;   (with-temp-buffer
-;;     (emacs-lisp-mode)
-;;     (insert ";; Comment\n(defun test () nil)\n(defun test2 () (let ((var 1))))")
-
-;;     ;; Mock buffer-file-name to avoid exclusion
-;;     (let
-;;         ((buffer-file-name "test.el")
-;;          (elinter-exclude-files nil))
-;;       (elinter-lint-buffer))
-
-;;     ;; Check formatting improvements using more flexible pattern matching
-;;     (should
-;;      (string-match-p ";; Comment"
-;;                      (buffer-string)))
-;;     (should
-;;      (string-match-p "(defun test"
-;;                      (buffer-string)))
-;;     (should
-;;      (string-match-p "(let[[:space:]]*\\(([[:space:]]*var[[:space:]]*1[[:space:]]*)\\)"
-;;                      (buffer-string)))))
 (ert-deftest test-elinter-lint-buffer
     ()
   (with-temp-buffer
