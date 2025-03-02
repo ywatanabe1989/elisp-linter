@@ -1,0 +1,39 @@
+Running 18 tests (2025-03-03 01:30:56+1100, selector ‘t’)
+   passed   1/18  test-elinter-ensure-empty-line-before-def (0.000190 sec)
+   passed   2/18  test-elinter-fake-header-operations (0.000133 sec)
+Indenting region... 
+Indenting region...done
+   passed   3/18  test-elinter-indent-buffer (0.000397 sec)
+t
+nil
+   passed   4/18  test-elinter-is-empty-line (0.000099 sec)
+t
+t
+Indenting region... 
+Indenting region...done
+nil
+   passed   5/18  test-elinter-lint-buffer (0.001095 sec)
+   passed   6/18  test-elinter-loadable (0.000065 sec)
+Added /tmp/test.el to exclusion list
+   passed   7/18  test-elinter-register-exclude-file (0.000183 sec)
+   passed   8/18  test-elinter-register-loadable (0.000064 sec)
+   passed   9/18  test-elinter-register-vars-initialized (0.000065 sec)
+t
+t
+t
+nil
+   passed  10/18  test-elinter-remove-first-empty-lines (0.000107 sec)
+   passed  11/18  test-elinter-remove-whitespaces-between-closing-parens (0.000112 sec)
+   passed  12/18  test-elinter-skip-code-block (0.000085 sec)
+   passed  13/18  test-elinter-skip-comments (0.000080 sec)
+   passed  14/18  test-elinter-tag-operations (0.000122 sec)
+Added /tmp/test.el to exclusion list
+   passed  15/18  test-elinter-toggle-exclude-file-add (0.000135 sec)
+Removed /tmp/test.el from exclusion list
+   passed  16/18  test-elinter-toggle-exclude-file-remove (0.000164 sec)
+Removed /tmp/test.el from exclusion list
+   passed  17/18  test-elinter-unregister-exclude-file (0.000145 sec)
+   passed  18/18  test-elinter-vars-initialized (0.000087 sec)
+
+Ran 18 tests, 18 results as expected, 0 unexpected (2025-03-03 01:30:56+1100, 0.005116 sec)
+

@@ -1,6 +1,6 @@
 ;;; -*- coding: utf-8; lexical-binding: t -*-
 ;;; Author: ywatanabe
-;;; Timestamp: <2025-03-03 01:17:22>
+;;; Timestamp: <2025-03-03 01:30:52>
 ;;; File: /home/ywatanabe/.dotfiles/.emacs.d/lisp/elinter/elinter.el
 
 ;;; Copyright (C) 2024-2025 Yusuke Watanabe (ywatanabe@alumni.u-tokyo.ac.jp)
@@ -264,7 +264,8 @@ Adds an empty line before each defun declaration if one doesn't exist."
   "Indent entire buffer."
   (save-excursion
     (indent-region
-     (point-min))))
+     (point-min)
+     (point-max))))
 
 ;; ;; 3. Key Binding and Hook
 ;; ;; ----------------------------------------
