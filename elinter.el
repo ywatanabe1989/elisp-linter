@@ -1,6 +1,11 @@
-;;; Author: 2025-01-29 21:56:03
-;;; Timestamp: <2025-01-29 21:56:03>
+;;; -*- coding: utf-8; lexical-binding: t -*-
+;;; Author: ywatanabe
+;;; Timestamp: <2025-03-03 01:17:22>
 ;;; File: /home/ywatanabe/.dotfiles/.emacs.d/lisp/elinter/elinter.el
+
+;;; Copyright (C) 2024-2025 Yusuke Watanabe (ywatanabe@alumni.u-tokyo.ac.jp)
+
+(require 'elinter-register)
 
 ;; 1. Variables
 ;; ----------------------------------------
@@ -18,60 +23,98 @@
     ()
   "Format current elisp buffer"
   (interactive)
-  (let
-      ((original-point
-        (point)))
-    ;; To the top
-    (goto-char
-     (point-min))
+  (unless
+      (and buffer-file-name
+           (member
+            (expand-file-name buffer-file-name)
+            elinter-exclude-files))
+    (let
+        ((original-point
+          (point)))
 
-    ;; Remove any existing fake headers first
-    (--elinter-remove-existing-fake-headers)
+      ;; Ensure one empty line before def
+      (--elinter-ensure-empty-line-before-def)
 
-    ;; Insert fresh fake header
-    (--elinter-insert-fake-header)
+      ;; To the top
+      (goto-char
+       (point-min))
 
-    ;; Main
-    (while
-        (not
-         (eobp))
-      (when
+      ;; Remove any existing fake headers first
+      (--elinter-remove-existing-fake-headers)
+
+      ;; Insert fresh fake header
+      (--elinter-insert-fake-header)
+
+      ;; Main
+      (while
           (not
            (eobp))
-        (--elinter-skip-comments))
-      (when
-          (not
-           (eobp))
-        (--elinter-skip-code-block))
-      (when
-          (and
-           (not
-            (eobp))
-           (--elinter-is-empty-line))
-        (--elinter-insert-tag))
-      (when
-          (not
-           (eobp))
-        (delete-blank-lines))
-      (when
-          (not
-           (eobp))
-        (forward-line)))
-    ;; Calls pp-buffer
-    (pp-buffer)
-    ;; Removes all tags
-    (--elinter-remove-all-tags)
-    ;; Removes fake header
-    (--elinter-remove-fake-header)
-    ;; Mark buffer
-    (--elinter-indent-buffer)
-    ;; Cleanup
-    (--elinter-remove-the-first-empty-lines)
-    ;; To the original point
-    (goto-char original-point)))
+        (when
+            (not
+             (eobp))
+          (--elinter-skip-comments))
+        (when
+            (not
+             (eobp))
+          (--elinter-skip-code-block))
+        (when
+            (and
+             (not
+              (eobp))
+             (--elinter-is-empty-line))
+          (--elinter-insert-tag))
+        (when
+            (not
+             (eobp))
+          (delete-blank-lines))
+        (when
+            (not
+             (eobp))
+          (forward-line)))
+      ;; Calls pp-buffer
+      (pp-buffer)
+      ;; Fix closing parentheses
+      (--elinter-remove-whitespaces-between-closing-parens)
+      ;; Removes all tags
+      (--elinter-remove-all-tags)
+      ;; Removes fake header
+      (--elinter-remove-fake-header)
+      ;; Mark buffer
+      (--elinter-indent-buffer)
+      ;; Cleanup
+      (--elinter-remove-the-first-empty-lines)
+      ;; To the original point
+      (goto-char original-point))))
 
 ;; 3. Helper functions
 ;; ----------------------------------------
+
+(defun --elinter-ensure-empty-line-before-def
+    ()
+  "Ensure empty line before each defun.
+Adds an empty line before each defun declaration if one doesn't exist."
+  (save-excursion
+    (goto-char
+     (point-min))
+    (while
+        (re-search-forward "^(def" nil t)
+      (beginning-of-line)
+      (if
+          (=
+           (line-number-at-pos)
+           1)
+          ;; At the beginning of the buffer, no need for empty line
+          nil
+        ;; Check previous line
+        (save-excursion
+          (forward-line -1)
+          (unless
+              (looking-at "^[[:space:]]*$")
+            ;; Previous line is not empty, insert a blank line
+            (end-of-line)
+            (insert "\n"))))
+      ;; Move to the next line after current defun
+      (forward-line 1))))
 
 ;; Checker
 ;; ----------------------------------------
@@ -191,13 +234,37 @@
         (line-end-position))))
     (goto-char orig-pos)))
 
+(defun --elinter-remove-whitespaces-between-closing-parens
+    ()
+  "Fix cases where closing parenthesis is followed by newline and indented parentheses."
+  (save-excursion
+    (goto-char
+     (point-min))
+    (while
+        (re-search-forward ")\n[ \t]*)" nil t)
+      ;; Check that the first closing paren is not in a comment
+      (save-excursion
+        (goto-char
+         (match-beginning 0))
+        (beginning-of-line)
+        (unless
+            (looking-at "[ \t]*;")
+          ;; When we find a match and it's not commented, delete everything between the closing parentheses
+          (delete-region
+           (1+
+            (match-beginning 0))
+           (1-
+            (match-end 0))))))))
+
+;; Indent
+;; ----------------------------------------
+
 (defun --elinter-indent-buffer
     ()
   "Indent entire buffer."
   (save-excursion
     (indent-region
-     (point-min)
-     (point-max))))
+     (point-min))))
 
 ;; ;; 3. Key Binding and Hook
 ;; ;; ----------------------------------------
