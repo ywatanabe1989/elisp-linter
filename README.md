@@ -4,7 +4,7 @@
 !-- File: /home/ywatanabe/.dotfiles/.emacs.d/lisp/elinter/README.md
 !-- --- -->
 
-# ELisp Linter
+# Elisp Linter
 
 [![Build Status](https://github.com/ywatanabe1989/elisp-linter/workflows/tests/badge.svg)](https://github.com/ywatanabe1989/elisp-linter/actions)
 
