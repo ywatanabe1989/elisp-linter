@@ -1,7 +1,7 @@
 ;;; -*- coding: utf-8; lexical-binding: t -*-
 ;;; Author: ywatanabe
-;;; Timestamp: <2025-03-03 01:30:52>
-;;; File: /home/ywatanabe/.dotfiles/.emacs.d/lisp/elinter/elinter.el
+;;; Timestamp: <2025-03-05 09:40:10>
+;;; File: /home/ywatanabe/.emacs.d/lisp/elinter/elinter.el
 
 ;;; Copyright (C) 2024-2025 Yusuke Watanabe (ywatanabe@alumni.u-tokyo.ac.jp)
 
@@ -89,32 +89,74 @@
 ;; 3. Helper functions
 ;; ----------------------------------------
 
+;; ;; Only "(def"
+;; (defun --elinter-ensure-empty-line-before-def
+;;     ()
+;;   "Ensure empty line before each defun.
+;; Adds an empty line before each defun declaration if one doesn't exist."
+;;   (save-excursion
+;;     (goto-char
+;;      (point-min))
+;;     (while
+;;         (re-search-forward "^(def" nil t)
+;;       (beginning-of-line)
+;;       (if
+;;           (=
+;;            (line-number-at-pos)
+;;            1)
+;;           ;; At the beginning of the buffer, no need for empty line
+;;           nil
+;;         ;; Check previous line
+;;         (save-excursion
+;;           (forward-line -1)
+;;           (unless
+;;               (looking-at "^[[:space:]]*$")
+;;             ;; Previous line is not empty, insert a blank line
+;;             (end-of-line)
+;;             (insert "\n"))))
+;;       ;; Move to the next line after current defun
+;;       (forward-line 1))))
+
+;; update this list
+
+(defcustom elinter-ensure-line-before-list
+  '("(def" "(global-set-key" "(use-package")
+  "List of regex patterns that should have an empty line before them.")
+
+;; apply the list
+
 (defun --elinter-ensure-empty-line-before-def
     ()
-  "Ensure empty line before each defun.
-Adds an empty line before each defun declaration if one doesn't exist."
+  "Ensure empty line before each pattern from elinter-ensure-line-before-list.
+Adds an empty line before each matching pattern if one doesn't exist."
   (save-excursion
     (goto-char
      (point-min))
-    (while
-        (re-search-forward "^(def" nil t)
-      (beginning-of-line)
-      (if
-          (=
-           (line-number-at-pos)
-           1)
-          ;; At the beginning of the buffer, no need for empty line
-          nil
-        ;; Check previous line
-        (save-excursion
-          (forward-line -1)
-          (unless
-              (looking-at "^[[:space:]]*$")
-            ;; Previous line is not empty, insert a blank line
-            (end-of-line)
-            (insert "\n"))))
-      ;; Move to the next line after current defun
-      (forward-line 1))))
+    (dolist
+        (pattern elinter-ensure-line-before-list)
+      (goto-char
+       (point-min))
+      (while
+          (re-search-forward
+           (concat "^" pattern)
+           nil t)
+        (beginning-of-line)
+        (if
+            (=
+             (line-number-at-pos)
+             1)
+            ;; At the beginning of the buffer, no need for empty line
+            nil
+          ;; Check previous line
+          (save-excursion
+            (forward-line -1)
+            (unless
+                (looking-at "^[[:space:]]*$")
+              ;; Previous line is not empty, insert a blank line
+              (end-of-line)
+              (insert "\n"))))
+        ;; Move to the next line after current match
+        (forward-line 1)))))
 
 ;; Checker
 ;; ----------------------------------------
