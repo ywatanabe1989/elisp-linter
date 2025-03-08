@@ -1,0 +1,36 @@
+#+TITLE: Elisp Test Report
+#+AUTHOR: ywatanabe
+#+DATE: 2025-03-05 09:40:49 Created by https://github.com/ywatanabe1989/emacs-test
+
+* Test Results Summary
+
+- Passed: 18
+- Failed: 0
+- Skipped: 0
+- Timeout (= 10 s): 0
+- Duplicates: 0
+- Total: 18
+- Total Time: 0.63 seconds
+- Success Rate: 100.0%
+
+* Passed Tests (18)
+** test-elinter-register.el (6 tests)
+- [[file:tests/test-elinter-register.el::test-elinter-register-loadable][test-elinter-register-loadable]]
+- [[file:tests/test-elinter-register.el::test-elinter-register-vars-initialized][test-elinter-register-vars-initialized]]
+- [[file:tests/test-elinter-register.el::test-elinter-register-exclude-file][test-elinter-register-exclude-file]]
+- [[file:tests/test-elinter-register.el::test-elinter-unregister-exclude-file][test-elinter-unregister-exclude-file]]
+- [[file:tests/test-elinter-register.el::test-elinter-toggle-exclude-file-add][test-elinter-toggle-exclude-file-add]]
+- [[file:tests/test-elinter-register.el::test-elinter-toggle-exclude-file-remove][test-elinter-toggle-exclude-file-remove]]
+** test-elinter.el (12 tests)
+- [[file:tests/test-elinter.el::test-elinter-loadable][test-elinter-loadable]]
+- [[file:tests/test-elinter.el::test-elinter-vars-initialized][test-elinter-vars-initialized]]
+- [[file:tests/test-elinter.el::test-elinter-is-empty-line][test-elinter-is-empty-line]]
+- [[file:tests/test-elinter.el::test-elinter-skip-comments][test-elinter-skip-comments]]
+- [[file:tests/test-elinter.el::test-elinter-skip-code-block][test-elinter-skip-code-block]]
+- [[file:tests/test-elinter.el::test-elinter-fake-header-operations][test-elinter-fake-header-operations]]
+- [[file:tests/test-elinter.el::test-elinter-tag-operations][test-elinter-tag-operations]]
+- [[file:tests/test-elinter.el::test-elinter-remove-first-empty-lines][test-elinter-remove-first-empty-lines]]
+- [[file:tests/test-elinter.el::test-elinter-remove-whitespaces-between-closing-parens][test-elinter-remove-whitespaces-between-closing-parens]]
+- [[file:tests/test-elinter.el::test-elinter-indent-buffer][test-elinter-indent-buffer]]
+- [[file:tests/test-elinter.el::test-elinter-ensure-empty-line-before-def][test-elinter-ensure-empty-line-before-def]]
+- [[file:tests/test-elinter.el::test-elinter-lint-buffer][test-elinter-lint-buffer]]
