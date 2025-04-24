@@ -1,11 +1,12 @@
 ;;; -*- coding: utf-8; lexical-binding: t -*-
 ;;; Author: ywatanabe
-;;; Timestamp: <2025-03-05 09:40:10>
-;;; File: /home/ywatanabe/.emacs.d/lisp/elinter/elinter.el
+;;; Timestamp: <2025-04-24 13:31:47>
+;;; File: /home/ywatanabe/.dotfiles/.emacs.d/lisp/elinter/elinter.el
 
-;;; Copyright (C) 2024-2025 Yusuke Watanabe (ywatanabe@alumni.u-tokyo.ac.jp)
+;;; Copyright (C) 2025 Yusuke Watanabe (ywatanabe@alumni.u-tokyo.ac.jp)
 
 (require 'elinter-register)
+(require 'subr-x)
 
 ;; 1. Variables
 ;; ----------------------------------------
@@ -23,68 +24,70 @@
     ()
   "Format current elisp buffer"
   (interactive)
-  (unless
-      (and buffer-file-name
-           (member
-            (expand-file-name buffer-file-name)
-            elinter-exclude-files))
-    (let
-        ((original-point
-          (point)))
+  (atomic-change-group
+    (save-excursion
+      (unless
+          (and buffer-file-name
+               (member
+                (expand-file-name buffer-file-name)
+                elinter-exclude-files))
+        (let
+            ((original-point
+              (point)))
 
-      ;; Ensure one empty line before def
-      (--elinter-ensure-empty-line-before-def)
+          ;; Ensure one empty line before def
+          (--elinter-ensure-empty-line-before-def)
 
-      ;; To the top
-      (goto-char
-       (point-min))
+          ;; To the top
+          (goto-char
+           (point-min))
 
-      ;; Remove any existing fake headers first
-      (--elinter-remove-existing-fake-headers)
+          ;; Remove any existing fake headers first
+          (--elinter-remove-existing-fake-headers)
 
-      ;; Insert fresh fake header
-      (--elinter-insert-fake-header)
+          ;; Insert fresh fake header
+          (--elinter-insert-fake-header)
 
-      ;; Main
-      (while
-          (not
-           (eobp))
-        (when
-            (not
-             (eobp))
-          (--elinter-skip-comments))
-        (when
-            (not
-             (eobp))
-          (--elinter-skip-code-block))
-        (when
-            (and
-             (not
-              (eobp))
-             (--elinter-is-empty-line))
-          (--elinter-insert-tag))
-        (when
-            (not
-             (eobp))
-          (delete-blank-lines))
-        (when
-            (not
-             (eobp))
-          (forward-line)))
-      ;; Calls pp-buffer
-      (pp-buffer)
-      ;; Fix closing parentheses
-      (--elinter-remove-whitespaces-between-closing-parens)
-      ;; Removes all tags
-      (--elinter-remove-all-tags)
-      ;; Removes fake header
-      (--elinter-remove-fake-header)
-      ;; Mark buffer
-      (--elinter-indent-buffer)
-      ;; Cleanup
-      (--elinter-remove-the-first-empty-lines)
-      ;; To the original point
-      (goto-char original-point))))
+          ;; Main
+          (while
+              (not
+               (eobp))
+            (when
+                (not
+                 (eobp))
+              (--elinter-skip-comments))
+            (when
+                (not
+                 (eobp))
+              (--elinter-skip-code-block))
+            (when
+                (and
+                 (not
+                  (eobp))
+                 (--elinter-is-empty-line))
+              (--elinter-insert-tag))
+            (when
+                (not
+                 (eobp))
+              (delete-blank-lines))
+            (when
+                (not
+                 (eobp))
+              (forward-line)))
+          ;; Calls pp-buffer
+          (pp-buffer)
+          ;; Fix closing parentheses
+          (--elinter-remove-whitespaces-between-closing-parens)
+          ;; Removes all tags
+          (--elinter-remove-all-tags)
+          ;; Removes fake header
+          (--elinter-remove-fake-header)
+          ;; Mark buffer
+          (--elinter-indent-buffer)
+          ;; Cleanup
+          (--elinter-remove-the-first-empty-lines)
+          ;; To the original point
+          (goto-char original-point))))))
 
 ;; 3. Helper functions
 ;; ----------------------------------------
@@ -164,11 +167,12 @@ Adds an empty line before each matching pattern if one doesn't exist."
 (defun --elinter-is-empty-line
     ()
   "Check if current line contains only whitespace."
-  (let
-      ((is-empty-line
-        (looking-at "^[[:space:]]*$")))
-    (message "%s" is-empty-line)
-    is-empty-line))
+  (save-excursion
+    (let
+        ((is-empty-line
+          (looking-at "^[[:space:]]*$")))
+      (message "%s" is-empty-line)
+      is-empty-line)))
 
 ;; Skippers
 ;; ----------------------------------------
@@ -216,7 +220,8 @@ Adds an empty line before each matching pattern if one doesn't exist."
 (defun --elinter-insert-tag
     ()
   "Insert tag at current point."
-  (insert --elinter-tag))
+  (save-excursion
+    (insert --elinter-tag)))
 
 ;; Removers
 ;; ----------------------------------------
@@ -239,12 +244,15 @@ Adds an empty line before each matching pattern if one doesn't exist."
 
 (defun --elinter-remove-existing-fake-headers
     ()
-  ;; Remove any existing fake headers first
-  (while
-      (looking-at
-       (concat "^"
-               (regexp-quote --elinter-fake-header)))
-    (delete-line)))
+  "Remove any existing fake headers"
+  (save-excursion
+    (goto-char
+     (point-min))
+    (while
+        (looking-at
+         (concat "^"
+                 (regexp-quote --elinter-fake-header)))
+      (delete-line))))
 
 (defun --elinter-remove-all-tags
     ()
@@ -263,18 +271,19 @@ Adds an empty line before each matching pattern if one doesn't exist."
 (defun --elinter-remove-the-first-empty-lines
     ()
   "Remove empty lines at the beginning of buffer."
-  (let
-      ((orig-pos
-        (point)))
-    (goto-char
-     (point-min))
-    (while
-        (--elinter-is-empty-line)
-      (delete-region
-       (line-beginning-position)
-       (1+
-        (line-end-position))))
-    (goto-char orig-pos)))
+  (save-excursion
+    (let
+        ((orig-pos
+          (point)))
+      (goto-char
+       (point-min))
+      (while
+          (--elinter-is-empty-line)
+        (delete-region
+         (line-beginning-position)
+         (1+
+          (line-end-position))))
+      (goto-char orig-pos))))
 
 (defun --elinter-remove-whitespaces-between-closing-parens
     ()
