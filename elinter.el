@@ -1,9 +1,10 @@
 ;;; -*- coding: utf-8; lexical-binding: t -*-
 ;;; Author: ywatanabe
-;;; Timestamp: <2025-04-24 13:31:47>
-;;; File: /home/ywatanabe/.dotfiles/.emacs.d/lisp/elinter/elinter.el
+;;; Timestamp: <2025-04-30 13:17:25>
+;;; File: /home/ywatanabe/.emacs.d/lisp/elinter/elinter.el
 
 ;;; Copyright (C) 2025 Yusuke Watanabe (ywatanabe@alumni.u-tokyo.ac.jp)
+
 
 (require 'elinter-register)
 (require 'subr-x)
@@ -16,6 +17,10 @@
 
 (defvar --elinter-tag "(THIS-IS-ELINTER-TAG)"
   "Tag string used to mark positions during formatting.")
+
+(defcustom elinter-supported-modes
+  '(emacs-lisp-mode lisp-mode)
+  "List of major modes supported by elinter.")
 
 ;; 2. Main Function
 ;; ----------------------------------------
@@ -88,6 +93,67 @@
           (--elinter-remove-the-first-empty-lines)
           ;; To the original point
           (goto-char original-point))))))
+
+;; (defun elinter-lint-buffer ()
+;;   "Format current buffer based on its major mode."
+;;   (interactive)
+;;   ;; Check if current mode is supported
+;;   (unless (member major-mode elinter-supported-modes)
+;;     (message "Elinter: %s mode not supported" major-mode)
+;;     (return-from elinter-lint-buffer))
+
+;;   ;; Save undo-tree state if enabled
+;;   (when (bound-and-true-p undo-tree-mode)
+;;     (undo-tree-save-state-to-register ?l))
+
+;;   ;; Main formatting logic
+;;   (save-excursion
+;;     (unless (and buffer-file-name
+;;                  (member (expand-file-name buffer-file-name)
+;;                          elinter-exclude-files))
+;;       (let ((original-point (point)))
+;;         ;; Mode-specific formatting
+;;         (cond
+;;          ((memq major-mode '(emacs-lisp-mode lisp-mode))
+;;           ;; Elisp formatting
+;;           (--elinter-format-elisp-buffer))
+;;          ;; Add other modes here as needed
+;;          )
+
+;;         ;; Return to original position
+;;         (goto-char original-point))))
+
+;;   ;; Restore undo-tree state if enabled
+;;   (when (bound-and-true-p undo-tree-mode)
+;;     (undo-tree-restore-state-from-register ?l)))
+
+;; (defun --elinter-format-elisp-buffer ()
+;;   "Format buffer containing Emacs Lisp code."
+;;   ;; Existing formatting logic
+;;   (--elinter-ensure-empty-line-before-def)
+;;   (goto-char (point-min))
+;;   (--elinter-remove-existing-fake-headers)
+;;   (--elinter-insert-fake-header)
+;;   ;; Main formatting loop
+;;   (while (not (eobp))
+;;     (when (not (eobp))
+;;       (--elinter-skip-comments))
+;;     (when (not (eobp))
+;;       (--elinter-skip-code-block))
+;;     (when (and (not (eobp))
+;;                (--elinter-is-empty-line))
+;;       (--elinter-insert-tag))
+;;     (when (not (eobp))
+;;       (delete-blank-lines))
+;;     (when (not (eobp))
+;;       (forward-line)))
+;;   ;; Post-processing
+;;   (pp-buffer)
+;;   (--elinter-remove-whitespaces-between-closing-parens)
+;;   (--elinter-remove-all-tags)
+;;   (--elinter-remove-fake-header)
+;;   (--elinter-indent-buffer)
+;;   (--elinter-remove-the-first-empty-lines))
 
 ;; 3. Helper functions
 ;; ----------------------------------------
@@ -177,15 +243,45 @@ Adds an empty line before each matching pattern if one doesn't exist."
 ;; Skippers
 ;; ----------------------------------------
 
-(defun --elinter-skip-comments
-    ()
-  "Skip over comment blocks and move to next non-comment line."
-  (when
-      (looking-at "^[[:space:]]*;")
+;; (defun --elinter-skip-comments
+;;     ()
+;;   "Skip over comment blocks and move to next non-comment line."
+;;   (when
+;;       (looking-at "^[[:space:]]*;")
+;;     (forward-line 1)
+;;     (while
+;;         (looking-at "^[[:space:]]*;")
+;;       (forward-line 1))))
+
+(defcustom elinter-preserve-comment-patterns
+  '("^;;;###autoload" "^;; [A-Z]+-[A-Z]+-[A-Z]+:")
+  "List of regex patterns for comments that should be preserved during formatting.")
+
+(defun --elinter-skip-comments ()
+  "Skip over comment blocks and move to next non-comment line.
+Preserves special comments like autoload tags."
+  (when (looking-at "^[[:space:]]*;")
+    (let ((current-line (buffer-substring-no-properties
+                         (line-beginning-position)
+                         (line-end-position))))
+      (dolist (pattern elinter-preserve-comment-patterns)
+        (when (string-match pattern current-line)
+          ;; Don't modify this line - just advance past it
+          (forward-line 1)
+          (return-from --elinter-skip-comments))))
+
     (forward-line 1)
-    (while
-        (looking-at "^[[:space:]]*;")
-      (forward-line 1))))
+    (while (looking-at "^[[:space:]]*;")
+      (let ((current-line (buffer-substring-no-properties
+                           (line-beginning-position)
+                           (line-end-position))))
+        (catch 'continue
+          (dolist (pattern elinter-preserve-comment-patterns)
+            (when (string-match pattern current-line)
+              ;; Don't modify this line - just advance past it
+              (forward-line 1)
+              (throw 'continue t)))
+          (forward-line 1))))))
 
 (defun --elinter-skip-code-block
     ()
@@ -331,6 +427,7 @@ Adds an empty line before each matching pattern if one doesn't exist."
 ;;           (lambda
 ;;             ()
 ;;             (add-hook 'before-save-hook 'elinter-lint-buffer nil t)))
+
 
 (provide 'elinter)
 
